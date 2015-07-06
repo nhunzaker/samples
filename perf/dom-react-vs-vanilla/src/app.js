@@ -61,8 +61,7 @@ var FlickrImage = React.createClass({
 var FlickrImages = React.createClass({
 
   loadImagesFromFlickr: function () {
-    var refreshButton = React.findDOMNode(this).querySelector('.refresh');
-    refreshButton.disabled = true;
+    this.setState({ loading: true })
 
     var onFlickr = function (results) {
 
@@ -95,7 +94,7 @@ var FlickrImages = React.createClass({
           totalTime: window.performance.now() - startDrawTime
         });
 
-        refreshButton.disabled = false;
+        this.setState({ loading: false })
       }
 
       requestAnimationFrame(onNextFrameDone.bind(this));
@@ -109,36 +108,26 @@ var FlickrImages = React.createClass({
     searchIndex %= searchTerms.length;
   },
 
-  getInitialState: function () {
-    return {data: []};
+  // Make a zip for the results.
+  downloadResults: function() {
+    var zip = new JSZip();
+
+    resultsStr = window.results.reduce(function(previous, value, index) {
+      return previous +
+          value.size + ',' + value.jsTime + ',' + value.totalTime + '\n';
+    }, 'Size,JavaScript Time,Total Time\n');
+
+    zip.file('results-react.csv', resultsStr);
+
+    var blob = zip.generate({type:'blob'});
+    saveAs(blob, 'results-react.zip');
   },
 
-  componentDidMount: function () {
-
-    // Get the refresh and download buttons directly, and add on some callbacks.
-    var refreshButton = React.findDOMNode(this).querySelector('.refresh');
-    var downloadButton = React.findDOMNode(this).querySelector('.download');
-
-    // Grab some more images.
-    refreshButton.addEventListener('click',
-        this.loadImagesFromFlickr.bind(this));
-
-    // Make a zip for the results.
-    downloadButton.addEventListener('click', function () {
-
-      var zip = new JSZip();
-
-      resultsStr = window.results.reduce(function(previous, value, index) {
-        return previous +
-            value.size + ',' + value.jsTime + ',' + value.totalTime + '\n';
-      }, 'Size,JavaScript Time,Total Time\n');
-
-      zip.file('results-react.csv', resultsStr);
-
-      var blob = zip.generate({type:'blob'});
-      saveAs(blob, 'results-react.zip');
-
-    });
+  getInitialState: function () {
+    return {
+      data: [],
+      loading: false
+    };
   },
 
   /**
@@ -147,11 +136,11 @@ var FlickrImages = React.createClass({
   render: function () {
     return (
       <div className="flickr-image-list">
-        <button className="refresh">Add images</button>
-        <button className="download">Download results</button>
+        <button className="refresh" disabled={ this.state.loading } onClick={ this.loadImagesFromFlickr }>Add images</button>
+        <button className="download" onClick={ this.downloadResults }>Download results</button>
       {
         this.state.data.map(function(image, index) {
-          return <FlickrImage key={index} image={image} />;
+          return <FlickrImage key={image.id} image={image} />;
         })
       }
       </div>
