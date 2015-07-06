@@ -139,7 +139,7 @@ var FlickrImages = React.createClass({
         <button className="refresh" disabled={ this.state.loading } onClick={ this.loadImagesFromFlickr }>Add images</button>
         <button className="download" onClick={ this.downloadResults }>Download results</button>
       {
-        this.state.data.map(function(image, index) {
+        this.state.data.map(function(image) {
           return <FlickrImage key={image.id} image={image} />;
         })
       }
